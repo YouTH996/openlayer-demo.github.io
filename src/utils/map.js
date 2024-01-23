@@ -74,11 +74,7 @@ function getShipCanvas(fistColor, sendColor) {
   return canvas;
 }
 
-export function createStyle({name, sog, mmsi, cog}) {
-  console.log(name);
-  console.log(sog);
-  console.log(mmsi);
-  console.log(cog);
+export function createStyle({name, sog, cog}) {
   let styleArray = []
   let pointStyle = new Style({
     // 设置图片效果

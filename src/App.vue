@@ -1,6 +1,8 @@
 <template>
   <div id="app">
     <div id="map" class="map" ref="map"></div>
+    <search-box/>
+    <detail-box v-if="detailBoxVisible" ref="detailBox" @detailBoxClose="detailBoxVisible=false"/>
   </div>
 </template>
 
@@ -14,16 +16,19 @@ import {Vector as VectorLayer} from 'ol/layer.js';
 import {fromLonLat} from "ol/proj";
 import {getShip} from "@/api/ship";
 import {createStyle, getLonLatList, getXyzLayer} from "@/utils/map";
+import searchBox from "@/components/SearchBox/index.vue";
+import detailBox from "@/components/DetaiBox/index.vue";
 
 export default {
   name: 'App',
-  components: {},
+  components: {searchBox, detailBox},
   data() {
     return {
       layers: [], //图层
       shipLayer: undefined,
       map: undefined,//底图容器，
-      dataList: []//船舶数据
+      dataList: [],//船舶数据
+      detailBoxVisible: false  //船舶详情框是否可见
     }
   },
   mounted() {
@@ -31,6 +36,7 @@ export default {
     this.initLayer()
     this.initMap()
     this.moveHandler()
+    this.clickHandler()
   },
   methods: {
     //加载船舶图层
@@ -48,6 +54,7 @@ export default {
     //初始化容器
     initMap() {
       this.map = new Map({
+        controls: [],
         layers: this.layers,
         // 设置显示地图的视图
         view: new View({
@@ -65,20 +72,15 @@ export default {
     //船舶数据处理类
     shipDataHandler(lonLat) {
       this.getShip(lonLat).then(() => {
-        const features = this.dataList.map(item => {
-          return {
+        this.dataList.forEach(item => {
+          const feature = new Feature({
             geometry: new Point(fromLonLat([item.longitude, item.latitude])),
-            name: item.mmsi.toString(),
-            mmsi: item.mmsi,
+            name: item.shipname || item.mmsi.toString(),
+            mmsi:  item.mmsi,
             sog: item.sog,
             cog: (item.cog) / 10
-          }
-        })
-        features.forEach(featureOptions => {
-          const feature = new Feature({
-            geometry: featureOptions.geometry,
           });
-          feature.setStyle(createStyle(featureOptions));
+          feature.setStyle(createStyle(feature.values_));
           this.shipLayer.getSource().addFeature(feature)
         })
       })
@@ -107,7 +109,29 @@ export default {
           this.shipDataHandler(lonLat);
         }
       });
-    }
+      //鼠标样式修改
+      this.map.on("pointermove", (e) => {
+        if (this.map.hasFeatureAtPixel(e.pixel)) {
+          this.map.getViewport().style.cursor = "pointer";
+        } else {
+          this.map.getViewport().style.cursor = "inherit";
+        }
+      });
+    },
+    // 点击获取信息
+    clickHandler() {
+      this.map.on("singleclick", (e) => {
+        // 判断是否点击在点上
+        const feature = this.map.forEachFeatureAtPixel(e.pixel, (item) => item);
+        if (feature) {
+          this.detailBoxVisible = true
+          this.$nextTick(() => {
+            this.$refs['detailBox'].init(feature.values_)
+          })
+
+        }
+      });
+    },
   }
 }
 </script>
@@ -121,5 +145,6 @@ export default {
 .map {
   width: 100%;
   height: 100vh;
+  z-index: -9999;
 }
 </style>
