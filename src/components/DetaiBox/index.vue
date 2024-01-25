@@ -1,7 +1,7 @@
 <template>
   <div id="detail-box">
     <el-card>
-      <el-descriptions class="margin-top" title="AIS信息" :column="2" size="medium" border>
+      <el-descriptions class="margin-top" :title="form.shipname" :column="2" size="medium" border>
         <template slot="extra">
           <el-button type="danger" size="small" icon="el-icon-close" circle @click="close"></el-button>
         </template>
@@ -21,25 +21,25 @@
           <template slot="label">
             呼号:
           </template>
-          {{ form.callSign }}
+          {{ form.callno }}
         </el-descriptions-item>
         <el-descriptions-item>
           <template slot="label">
             航向:
           </template>
-          {{ form.cog }}度
+          {{ form.cog ? `${form.cog / 10.0}度` : "" }}
         </el-descriptions-item>
         <el-descriptions-item>
           <template slot="label">
             IMO:
           </template>
-          {{ form.imoNumber }}
+          {{ form.imo }}
         </el-descriptions-item>
         <el-descriptions-item>
           <template slot="label">
             航速:
           </template>
-          {{ form.sog }}节
+          {{ form.sog ? `${form.sog / 10.0}节` : "" }}
         </el-descriptions-item>
         <el-descriptions-item>
           <template slot="label">
@@ -69,37 +69,37 @@
           <template slot="label">
             船长:
           </template>
-          {{ form.shipLength }}米
+          {{ form.length ? `${form.length}米` : "" }}
         </el-descriptions-item>
         <el-descriptions-item>
           <template slot="label">
             目的地:
           </template>
-          {{ form.destination }}
+          {{ form.dest }}
         </el-descriptions-item>
         <el-descriptions-item>
           <template slot="label">
             船宽:
           </template>
-          {{ form.shipWidth }}米
+          {{ form.width ? `${form.width}米` : "" }}
         </el-descriptions-item>
         <el-descriptions-item>
           <template slot="label">
             预到时间:
           </template>
-          {{ form.sog }}
+          {{ formatEtaTime(form.eta) }}
         </el-descriptions-item>
         <el-descriptions-item>
           <template slot="label">
             吃水:
           </template>
-          {{ form.eatTime }}米
+          {{ form.draft ? `${form.draft}米` : "" }}
         </el-descriptions-item>
         <el-descriptions-item>
           <template slot="label">
             更新时间:
           </template>
-          {{ form.updateDateTime }}
+          {{ parseTime(form.receivetime) }}
         </el-descriptions-item>
       </el-descriptions>
     </el-card>
@@ -108,22 +108,31 @@
 </template>
 <script>
 import {getShipDetail} from "@/api/ship";
+import {parseTime} from "@/utils/date";
 
 export default {
-  name:"search_box",
-  data(){
-    return{
-      form:''
+  name: "search_box",
+  data() {
+    return {
+      form: ''
     }
   },
-  methods:{
-    init({mmsi}){
-      getShipDetail(mmsi).then(res=>{
-        this.form=res.data
+  methods: {
+    parseTime,
+    init({mmsi}) {
+      getShipDetail({mmsi}).then(res => {
+        this.form = res.data
       })
     },
-    close(){
+    close() {
       this.$emit("detailBoxClose")
+    },
+    formatEtaTime(eta) {
+      if (eta) {
+        let r = eta
+        return parseTime(new Date((new Date()).getFullYear() + "-" + r.substring(0, 2) + "-" + r.substring(2, 4) + " " + r.substring(4, 6) + ":" + r.substring(6) + ":00"));
+      }
+
     }
   }
 
@@ -131,9 +140,8 @@ export default {
 </script>
 
 
-
 <style>
-#detail-box{
+#detail-box {
   position: absolute;
   top: 60px;
   left: 20px;

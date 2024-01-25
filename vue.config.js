@@ -8,12 +8,12 @@ module.exports = defineConfig({
     host: 'localhost',
     port: 8001,
     open: true,
-    // proxy: {
-    //   "/ship": {
-    //     target: "https://www.shipxy.com",
-    //     changeOrigin: true,
-    //   },
-    // }
+    proxy: {
+      "/api": {
+        target: "https://ais.msa.gov.cn",
+        changeOrigin: true,
+      },
+    }
   },
 
 })

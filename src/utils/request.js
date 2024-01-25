@@ -5,6 +5,7 @@ axios.defaults.headers["Content-Type"] = "application/json;charset=utf-8";
 const service = axios.create({
   // axios中请求配置有baseURL选项，表示请求URL公共部分
   baseURL: process.env.VUE_APP_BASE_API,
+  withCredentials:true,
   // 超时
   timeout: 10000,
 });
@@ -12,9 +13,6 @@ const service = axios.create({
 // request拦截器
 service.interceptors.request.use(
   (config) => {
-    if (config.url.includes("hljk.axfiber.com")) {
-      config.headers['Authorization']="Bearer eyJhbGciOiJIUzUxMiJ9.eyJsb2dpbl91c2VyX2tleSI6ImVjNWI1ODEyLTNkNTYtNDA1OS1iN2U1LTg1NTY2OTIyZjgyZiJ9.jRZaeoWt6MOIjurwXw_Of9hq46d-RqyMMy9tgZrAqXyq2gpZqITj6ckUWiYvNpAzKodOETr7oUjvQ4Y72wdJYA";
-    }
     // get请求映射params参数
     if (config.method === "get" && config.params) {
       let url = config.url + "?" + tansParams(config.params);

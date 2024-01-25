@@ -13,7 +13,7 @@ import {XYZ} from "ol/source";
 
 let canvas;
 
-export function getXyzLayer(url){
+export function getXyzLayer(url) {
   return new TileLayer({
     visible: true,
     preload: Infinity,
@@ -74,7 +74,111 @@ function getShipCanvas(fistColor, sendColor) {
   return canvas;
 }
 
-export function createStyle({name, sog, cog}) {
+export function createStyle({name, sog, cog, hasSelected}) {
+  let styleArray = []
+  let pointStyle = new Style({
+    // 设置图片效果
+    image: new Icon({
+      img: getShipCanvas("rgb(0, 255, 0)", "rgb(0, 255, 0)"),
+      anchor: [0.3, 0.3],
+      scale: 1 / window.devicePixelRatio,
+      opacity: 0.8,
+      imgSize: [canvas.width, canvas.height],
+      rotation: Math.PI + Math.PI / (180 / cog),
+    }),
+    zIndex: 99,
+  });
+
+  styleArray = [pointStyle, lableStyle(name, cog)]
+  if (hasSelected) {
+    styleArray.push(selectStyle(25))
+  }
+  return styleArray;
+}
+
+//标签样式
+export function lableStyle(name, cog) {
+  let {textAlign, offsetX, offsetY, rotation} = getLabelDirection(cog)
+  return new Style({
+    image: new RegularShape({
+      points: 2,
+      radius: 15,
+      displacement: [0, 15],
+      rotation: (rotation * Math.PI) / 180,
+      stroke: new Stroke({
+        color: "rgb(0,0,0)",
+      }),
+    }),
+    text: new Text({
+      font: '10px sans-serif',
+      textAlign: textAlign,
+      justify: 'left',
+      text: name,
+      offsetX: offsetX,
+      offsetY: offsetY,
+      fill: new Fill({
+        color: [29, 55, 76, 1],
+      }),
+      backgroundFill: new Fill({
+        color: [244, 251, 255, 0.6],
+      }),
+      padding: [2, 2, 2, 2],
+    }),
+  });
+}
+
+//根据航向设置label的方向
+function getLabelDirection(cog = 0) {
+  let textAlign, offsetX, offsetY, rotation
+  if (cog >= 90 && cog < 180) {
+    textAlign = "left"
+    offsetX = 25
+    offsetY = 25
+    rotation = 135
+  } else if (cog >= 180 && cog < 270) {
+    textAlign = "right"
+    offsetX = -25
+    offsetY = 25
+    rotation = 225
+  } else if (cog >= 270 && cog < 360) {
+    textAlign = "right"
+    offsetX = -25
+    offsetY = -25
+    rotation = 315
+  } else {
+    textAlign = "left"
+    offsetX = 25
+    offsetY = -25
+    rotation = 45
+  }
+  return {textAlign, offsetX, offsetY, rotation}
+}
+
+//船舶选中样式
+export function selectStyle(size = 25) {
+  let longRadius = size * Math.SQRT2;
+  return new Style({
+    image: new RegularShape({
+      points: 4,
+      radius: size,
+      angle: Math.PI / (180 / 45),
+      stroke: new Stroke({
+        color: "red",
+        lineCap: "square",
+        lineJoin: "miter",
+        lineDash: [
+          (longRadius * 3) / 10,
+          (longRadius * 4) / 10,
+          (longRadius * 3) / 10,
+          0,
+        ],
+      }),
+    }),
+    zIndex: 99999999999999,
+  });
+}
+
+export function createNoLabelStyle({name, sog, cog}) {
   let styleArray = []
   let pointStyle = new Style({
     // 设置图片效果
@@ -88,36 +192,9 @@ export function createStyle({name, sog, cog}) {
     }),
     zIndex: 99,
   });
-  let labelStyle = new Style({
-    image: new RegularShape({
-      points: 2,
-      radius: 15,
-      displacement: [0, 15],
-      rotation: (45 * Math.PI) / 180,
-      stroke: new Stroke({
-        color: "rgb(0,0,0)",
-      }),
-    }),
-    text: new Text({
-      font: '16px sans-serif',
-      textAlign: 'left',
-      justify: 'left',
-      text: name,
-      offsetY: -25,
-      offsetX: 25,
-      fill: new Fill({
-        color: [255, 255, 255, 1],
-      }),
-      backgroundFill: new Fill({
-        color: [168, 50, 153, 0.6],
-      }),
-      padding: [2, 2, 2, 2],
-    }),
-  });
-  styleArray = [pointStyle, labelStyle]
+  styleArray = [pointStyle]
   return styleArray
 }
-
 
 function transformLocation(array, size) {
   let result = [];
@@ -132,8 +209,8 @@ function transformLocation(array, size) {
 export function getLonLatList(map) {
   let list = map.getView().calculateExtent(map.getSize());
   let newList = transformLocation(list, 2);
-  let minPosStr = newList[0][0]+","+newList[0][1]
-  let maxPosStr = newList[1][0]+","+newList[1][1]
+  let minPosStr = newList[0][0] + "," + newList[0][1]
+  let maxPosStr = newList[1][0] + "," + newList[1][1]
   return {minPosStr, maxPosStr}
 
 }
